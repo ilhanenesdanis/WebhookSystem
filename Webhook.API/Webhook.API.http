@@ -14,6 +14,6 @@ Content-Type : application/json
 POST {{Webhook.API_HostAddress}}/webhooks/subsriptions
 Content-Type : application/json
 {
-    "WebhokUrl":"https://webhook.site/ad609596-ad61-4edd-8cf2-eb9d7256a2b4",
+    "WebhokUrl":"https://webhook.site/98b4250a-8a06-4a5a-987f-ede5336a22c6",
     "EventType":"order.created"
 }

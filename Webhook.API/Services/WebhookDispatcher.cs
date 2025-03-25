@@ -1,13 +1,24 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.Diagnostics;
 using System.Text.Json;
+using System.Threading.Channels;
 using Webhook.API.Data;
 using Webhook.API.Models;
+using Webhook.API.OpenTelemtry;
 
 namespace Webhook.API.Services;
 
-public sealed class WebhookDispatcher(IHttpClientFactory httpClientFactory, WebhookDbContext context)
+public sealed class WebhookDispatcher(IHttpClientFactory httpClientFactory, WebhookDbContext context, Channel<WebhookDispatch> webhooksChannel)
 {
-    public async Task DispatchAsync<T>(string eventType, T payload)
+    public async Task DispatchAsync<T>(string eventType, T data) where T : notnull
+    {
+        using Activity activity = DiagnosticConfig.Source.StartActivity($"{eventType} dispatch webhook");
+        activity?.AddTag("event-type", eventType);
+
+        await webhooksChannel.Writer.WriteAsync(new WebhookDispatch(eventType, data, activity?.Id));
+    }
+
+    public async Task ProccessAsync<T>(string eventType, T payload)
     {
         var subscriptions = await context.WebhookSubscriptions.AsNoTracking().Where(x => x.EventType == eventType).ToListAsync();
 

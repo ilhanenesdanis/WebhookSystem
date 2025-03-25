@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
+using System.Threading.Channels;
 using Webhook.API.Data;
 using Webhook.API.Extensions;
 using Webhook.API.Models;
+using Webhook.API.OpenTelemtry;
 using Webhook.API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,6 +21,18 @@ builder.Services.AddDbContext<WebhookDbContext>(opt =>
 {
     opt.UseNpgsql(builder.Configuration.GetConnectionString("webhooks"));
 });
+
+builder.Services.AddHostedService<WebhookProccessor>();
+
+builder.Services.AddSingleton(_ =>
+{
+    return Channel.CreateBounded<WebhookDispatch>(new BoundedChannelOptions(100)
+    {
+        FullMode = BoundedChannelFullMode.Wait
+    });
+});
+
+builder.Services.AddOpenTelemetry().WithTracing(trace => trace.AddSource(DiagnosticConfig.Source.Name));
 
 var app = builder.Build();
 
